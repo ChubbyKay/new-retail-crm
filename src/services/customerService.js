@@ -113,6 +113,103 @@ class CustomerService {
       client.release();
     }
   }
+
+  /**
+   * 使用優惠券
+   * @param {string} customerId - 客戶UUID
+   * @param {string} customerCouponId - 客戶優惠券UUID
+   * @param {number} orderAmount - 訂單金額 (用於驗證門檻)
+   * @returns {Object} 使用結果
+   */
+  async useCoupon(customerId, customerCouponId, orderAmount = 0) {
+    const client = await pool.connect();
+    
+    try {
+      await client.query('BEGIN');
+      
+      // 查詢客戶優惠券詳情 (使用 FOR UPDATE 鎖定)
+      const result = await client.query(`
+        SELECT 
+          cc.*,
+          c.name as coupon_name,
+          c.type as coupon_type,
+          c.threshold_amount,
+          c.amount,
+          c.discount,
+          c.end_date
+        FROM customer_coupon cc
+        JOIN coupon c ON cc.coupon_id = c.uuid
+        WHERE cc.uuid = $1 AND cc.customer_id = $2
+        FOR UPDATE
+      `, [customerCouponId, customerId]);
+      
+      if (result.rows.length === 0) {
+        throw new Error('找不到指定的優惠券或您沒有權限使用');
+      }
+      
+      const customerCoupon = result.rows[0];
+      
+      // 檢查優惠券狀態
+      if (customerCoupon.status === 'used') {
+        throw new Error('優惠券已使用');
+      }
+      
+      if (customerCoupon.status === 'expired') {
+        throw new Error('優惠券已過期');
+      }
+      
+      // 檢查是否過期
+      const now = new Date();
+      const endDate = new Date(customerCoupon.end_date);
+      
+      if (now > endDate) {
+        // 自動標記為過期
+        await client.query(
+          'UPDATE customer_coupon SET status = $1 WHERE uuid = $2',
+          ['expired', customerCouponId]
+        );
+        throw new Error('優惠券已過期');
+      }
+      
+      // 檢查門檻金額
+      if (customerCoupon.threshold_amount > 0 && orderAmount < customerCoupon.threshold_amount) {
+        throw new Error(`訂單金額須達到 ${customerCoupon.threshold_amount} 元才能使用此優惠券`);
+      }
+      
+      // 計算折扣金額
+      let discountAmount = 0;
+      if (customerCoupon.coupon_type === 'fixed_amount') {
+        discountAmount = customerCoupon.amount;
+      } else if (customerCoupon.coupon_type === 'percentage') {
+        discountAmount = Math.round(orderAmount * (customerCoupon.discount / 100));
+      }
+      
+      // 更新優惠券狀態為已使用
+      const usedAt = new Date();
+      await client.query(
+        'UPDATE customer_coupon SET status = $1, used_at = $2 WHERE uuid = $3',
+        ['used', usedAt, customerCouponId]
+      );
+      
+      await client.query('COMMIT');
+      
+      return {
+        customer_coupon_id: customerCouponId,
+        coupon_name: customerCoupon.coupon_name,
+        coupon_type: customerCoupon.coupon_type,
+        discount_amount: discountAmount,
+        order_amount: orderAmount,
+        final_amount: Math.max(0, orderAmount - discountAmount),
+        used_at: usedAt
+      };
+      
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
 }
 
 module.exports = new CustomerService();

@@ -90,9 +90,24 @@ const validateCustomerCouponParams = [
   handleValidationErrors
 ];
 
+// 使用優惠券驗證規則
+const validateUseCoupon = [
+  param('customerId')
+    .isUUID()
+    .withMessage('無效的客戶ID格式'),
+  param('customerCouponId')
+    .isUUID()
+    .withMessage('無效的客戶優惠券ID格式'),
+  body('order_amount')
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage('訂單金額必須是個大於等於0的數字'),
+  handleValidationErrors
+];
+
 module.exports = {
   validateCreateCoupon,
   validateUUID,
   validateCustomerCouponParams,
-  handleValidationErrors,
+  validateUseCoupon,
 };
