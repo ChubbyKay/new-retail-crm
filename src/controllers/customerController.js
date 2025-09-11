@@ -45,6 +45,52 @@ class CustomerController {
       next(error);
     }
   }
+
+  /**
+   * 查詢用戶所有優惠券狀態
+   * GET /api/customers/:customerId/coupons
+   */
+  async getCustomerCoupons(req, res, next) {
+    try {
+      const { customerId } = req.params;
+      const filters = {
+        status: req.query.status,
+        coupon_type: req.query.coupon_type,
+        limit: req.query.limit ? parseInt(req.query.limit) : null,
+        offset: req.query.offset ? parseInt(req.query.offset) : null,
+      };
+
+      const coupons = await customerService.getCustomerCoupons(
+        customerId,
+        filters
+      );
+
+      // 統計各狀態數量
+      const statusCount = {
+        unused: 0,
+        used: 0,
+        expired: 0,
+      };
+
+      coupons.forEach((coupon) => {
+        statusCount[coupon.computed_status] =
+          (statusCount[coupon.computed_status] || 0) + 1;
+      });
+
+      res.json({
+        success: true,
+        message: "查詢成功",
+        data: coupons,
+        meta: {
+          total: coupons.length,
+          status_count: statusCount,
+          filters: filters,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 module.exports = new CustomerController();

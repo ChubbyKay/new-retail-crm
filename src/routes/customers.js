@@ -4,6 +4,7 @@ const customerController = require("../controllers/customerController");
 const {
   validateCustomerCouponParams,
   validateUseCoupon,
+  validateCustomerId,
 } = require("../middleware/validation");
 
 /**
@@ -40,5 +41,25 @@ router.post(
   customerController.useCoupon
 );
 
+/**
+ * @route GET /api/customers/:customerId/coupons
+ * @desc  查詢指定客戶的所有優惠券狀態
+ * @param {string} customerId - 客戶的UUID
+ * @query {string} [status] - 篩選優惠券狀態 (unused, used, expired)
+ * @query {string} [coupon_type] - 篩選優惠券類型 (percentage, fixed_amount)
+ * @query {number} [limit=null] - 回傳的資料筆數上限
+ * @query {number} [offset=null] - 資料偏移量，用於分頁
+ * @example
+ * // 查詢某客戶所有未使用的百分比折扣券
+ * GET /api/customers/75badad8-1cfb-487d-96b4-6620274e91ae/coupons?status=unused&coupon_type=percentage
+ * 
+ * // 查詢某客戶所有優惠券，並進行分頁
+ * GET /api/customers/75badad8-1cfb-487d-96b4-6620274e91ae/coupons?limit=10&offset=20
+ */
+router.get(
+  '/:customerId/coupons', 
+  validateCustomerId, 
+  customerController.getCustomerCoupons
+);
 
 module.exports = router;
