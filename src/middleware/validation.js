@@ -79,8 +79,20 @@ const validateUUID = [
   handleValidationErrors,
 ];
 
+// 客戶ID和優惠券ID驗證
+const validateCustomerCouponParams = [
+  param('customerId')
+    .isUUID()
+    .withMessage('無效的客戶ID格式'),
+  param('couponId')
+    .isUUID()
+    .withMessage('無效的優惠券ID格式'),
+  handleValidationErrors
+];
+
 module.exports = {
   validateCreateCoupon,
   validateUUID,
+  validateCustomerCouponParams,
   handleValidationErrors,
 };
