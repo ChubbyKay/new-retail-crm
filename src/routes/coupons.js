@@ -25,4 +25,17 @@ const {
  */
 router.post("/", validateCreateCoupon, couponController.createCoupon);
 
+/**
+ * @route GET /api/coupons
+ * @desc 查詢可領取的優惠券列表
+ * @query {string} [type] - 優惠券類型 (percentage/fixed_amount)
+ * @query {string} [status] - 優惠券狀態 (active/pending/expired/sold_out)
+ * @query {boolean} [onlyAvailable=true] - 是否只顯示可用的優惠券
+ * @query {number} [limit] - 每頁數量
+ * @query {number} [offset] - 偏移量
+ * @example
+ * GET /api/coupons?type=fixed_amount&limit=10&offset=0
+ */
+router.get('/', couponController.getCoupons);
+
 module.exports = router;
