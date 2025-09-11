@@ -128,6 +128,24 @@ CREATE INDEX idx_customer_coupon_customer ON customer_coupon(customer_id);
 CREATE INDEX idx_customer_coupon_coupon ON customer_coupon(coupon_id);
 CREATE INDEX idx_customer_coupon_status ON customer_coupon(status);
 
+-- 觸發器函數：更新 updated_at 時間戳
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- 為各表建立觸發器
+CREATE TRIGGER update_customer_updated_at BEFORE UPDATE ON customer FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_tag_updated_at BEFORE UPDATE ON tag FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_customer_tag_updated_at BEFORE UPDATE ON customer_tag FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_product_updated_at BEFORE UPDATE ON product FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_order_updated_at BEFORE UPDATE ON "order" FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_order_item_updated_at BEFORE UPDATE ON order_item FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_coupon_updated_at BEFORE UPDATE ON coupon FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 -- 初始化測試資料
 INSERT INTO tag (name, description) VALUES 
 ('VIP', '高價值客戶'),
