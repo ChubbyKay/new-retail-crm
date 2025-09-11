@@ -56,6 +56,34 @@ class CouponController {
       next(error);
     }
   }
+
+  /**
+   * 查詢特定優惠券詳情
+   * GET /api/coupons/:id
+   */
+  async getCouponById(req, res, next) {
+    try {
+      const { id } = req.params;
+      const coupon = await couponService.getCouponById(id);
+      // 檢查優惠券可用性
+      const availability = couponService.checkCouponAvailability(coupon);
+
+      res.json({
+        success: true,
+        message: "查詢成功",
+        data: {
+          ...coupon,
+          availability: availability,
+        },
+      });
+    } catch (error) {
+      console.error(
+        `[${new Date().toISOString()}] Error getting coupon by id:`,
+        error.message
+      );
+      next(error);
+    }
+  }
 }
 
   module.exports = new CouponController();

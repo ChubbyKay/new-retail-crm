@@ -75,7 +75,7 @@ const validateCreateCoupon = [
 
 // UUID 參數驗證
 const validateUUID = [
-  param("uuid").isUUID().withMessage("無效的優惠券ID格式"),
+  param("id").isUUID().withMessage("無效的優惠券ID格式"),
   handleValidationErrors,
 ];
 

@@ -144,6 +144,79 @@ class CouponService {
       throw error;
     }
   }
+
+  /**
+   * 根據UUID查詢特定優惠券詳情
+   * @param {string} uuid - 優惠券UUID
+   * @returns {Object|null} 優惠券詳情
+   */
+  async getCouponById(uuid) {
+    const query = `
+      SELECT 
+        uuid,
+        name,
+        type,
+        description,
+        threshold_amount,
+        amount,
+        discount,
+        total_count,
+        remaining_count,
+        start_date,
+        end_date,
+        created_at,
+        updated_at,
+        CASE 
+          WHEN NOW() < start_date THEN 'pending'
+          WHEN NOW() > end_date THEN 'expired'
+          WHEN remaining_count <= 0 THEN 'sold_out'
+          ELSE 'active'
+        END as status
+      FROM coupon 
+      WHERE uuid = $1
+    `;
+
+    try {
+      const result = await pool.query(query, [uuid]);
+
+      if (result.rows.length === 0) {
+        throw new Error("找不到指定的優惠券");
+      }
+
+      return result.rows[0];
+    } catch (error) {
+      console.error("Error getting coupon by id:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * 檢查優惠券是否可用
+   * @param {Object} coupon - 優惠券資料
+   * @returns {Object} 檢查結果
+   */
+  checkCouponAvailability(coupon) {
+    const now = new Date();
+    const startDate = new Date(coupon.start_date);
+    const endDate = new Date(coupon.end_date);
+
+    const result = {
+      isAvailable: false,
+      reason: null,
+    };
+
+    if (now < startDate) {
+      result.reason = "coupon_not_started";
+    } else if (now > endDate) {
+      result.reason = "coupon_expired";
+    } else if (coupon.remaining_count <= 0) {
+      result.reason = "coupon_sold_out";
+    } else {
+      result.isAvailable = true;
+    }
+
+    return result;
+  }
 }
 
 module.exports = new CouponService();

@@ -38,4 +38,13 @@ router.post("/", validateCreateCoupon, couponController.createCoupon);
  */
 router.get('/', couponController.getCoupons);
 
+/**
+ * @route GET /api/coupons/:id
+ * @desc 查詢特定優惠券詳情
+ * @param {string} id - 優惠券UUID
+ * @example
+ * GET /api/coupons/123e4567-e89b-12d3-a456-426614174000
+ */
+router.get('/:id', validateUUID, couponController.getCouponById);
+
 module.exports = router;
