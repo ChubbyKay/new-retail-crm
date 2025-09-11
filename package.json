@@ -1,11 +1,12 @@
 {
-  "name": "new_retail_interview",
+  "name": "new_retail_crm",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
+    "setup-db": "node scripts/setup-db.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -14,7 +15,9 @@
   "dependencies": {
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
-    "pg": "^8.16.3"
+    "moment": "^2.30.1",
+    "pg": "^8.16.3",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"
