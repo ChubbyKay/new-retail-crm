@@ -1,4 +1,5 @@
 const express = require("express");
+const errorHandler = require("./middleware/errorHandler");
 require("dotenv").config();
 
 const app = express();
@@ -9,7 +10,7 @@ app.use(express.urlencoded({ extended: true }));
 // 基本路由
 app.get("/", (req, res) => {
   res.json({
-    message: "Welcome to NEW RETAIL INTERVIEW",
+    message: "Welcome to NEW RETAIL CRM",
     status: "success",
     timestamp: new Date().toISOString(),
   });
@@ -34,20 +35,24 @@ app.get("/health", async (req, res) => {
   }
 });
 
-// 錯誤處理中介軟體
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({
-    message: "Something went wrong!",
-    error: process.env.NODE_ENV === "development" ? err.message : {},
-  });
-});
+// 引入路由模組
+const couponRoutes = require("./routes/coupons");
+
+// 使用路由
+app.use("/api/coupons", couponRoutes);
+
 
 // 404 處理
 app.use((req, res) => {
   res.status(404).json({
+    success: false,
     message: "Route not found",
+    path: req.originalUrl,
+    method: req.method,
   });
 });
+
+// 全域錯誤處理中介軟體
+app.use(errorHandler);
 
 module.exports = app;
