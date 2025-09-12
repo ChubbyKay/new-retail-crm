@@ -9,19 +9,18 @@ const server = app.listen(PORT, () => {
   console.log(`Environment: ${process.env.NODE_ENV}`);
 });
 
-// 關閉伺服器
-process.on("SIGTERM", () => {
-  console.log("SIGTERM received. Shutting down gracefully...");
+// 優雅關閉伺服器
+const gracefulShutdown = (signal) => {
+  console.log(`${signal} received. Shutting down gracefully...`);
   server.close(() => {
-    console.log("Process terminated");
-    pool.end();
+    console.log("HTTP server closed.");
+    pool.end(() => {
+      console.log("Database pool closed. Process terminated.");
+      process.exit(0);
+    });
   });
-});
+};
 
-process.on("SIGINT", () => {
-  console.log("SIGINT received. Shutting down gracefully...");
-  server.close(() => {
-    console.log("Process terminated");
-    pool.end();
-  });
-});
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+
