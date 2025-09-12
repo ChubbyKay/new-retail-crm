@@ -151,18 +151,129 @@ INSERT INTO tag (name, description) VALUES
 ('VIP', '高價值客戶'),
 ('新客戶', '新註冊客戶'),
 ('活躍用戶', '近期活躍用戶'),
-('流失風險', '長期未消費客戶');
+('流失風險', '長期未消費客戶'),
+('高消費', '單次消費超過2000元客戶'),
+('忠實客戶', '持續回購客戶');
 
-INSERT INTO customer (name, email, phone, gender, birthday) VALUES 
-('張三', 'zhang@example.com', '0912345678', 'male', '1990-05-15'),
-('李四', 'li@example.com', '0923456789', 'female', '1985-08-22'),
-('王五', 'wang@example.com', '0934567890', 'male', '1992-12-10');
-
+-- 插入產品資料
 INSERT INTO product (name, category, price, description) VALUES 
 ('智慧手錶', '電子產品', 5999.00, '多功能智慧手錶'),
 ('運動鞋', '服飾配件', 2999.00, '舒適運動鞋'),
-('咖啡豆', '食品飲料', 599.00, '精品咖啡豆 1kg');
+('咖啡豆', '食品飲料', 599.00, '精品咖啡豆 1kg'),
+('筆記型電腦', '電子產品', 25999.00, '高效能筆記型電腦'),
+('保溫杯', '生活用品', 899.00, '316不鏽鋼保溫杯'),
+('藍牙耳機', '電子產品', 1899.00, '降噪藍牙耳機');
 
+-- 插入客戶資料 (含不同消費等級和時間分佈)
+INSERT INTO customer (name, email, phone, gender, birthday, total_spent, last_order_date) VALUES 
+-- 高消費近期活躍客戶
+('張三', 'zhang@example.com', '0912345678', 'male', '1990-05-15', 15680.00, CURRENT_TIMESTAMP - INTERVAL '5 days'),
+('李四', 'li@example.com', '0923456789', 'female', '1985-08-22', 8750.00, CURRENT_TIMESTAMP - INTERVAL '12 days'),
+('王五', 'wang@example.com', '0934567890', 'male', '1992-12-10', 12300.00, CURRENT_TIMESTAMP - INTERVAL '18 days'),
+
+-- 中等消費近期活躍客戶
+('陳小明', 'chen@example.com', '0945678901', 'male', '1988-03-20', 3200.00, CURRENT_TIMESTAMP - INTERVAL '8 days'),
+('林美麗', 'lin@example.com', '0956789012', 'female', '1993-07-14', 2800.00, CURRENT_TIMESTAMP - INTERVAL '15 days'),
+('黃大華', 'huang@example.com', '0967890123', 'male', '1987-11-08', 4500.00, CURRENT_TIMESTAMP - INTERVAL '22 days'),
+
+-- 低消費近期活躍客戶
+('吳小芬', 'wu@example.com', '0978901234', 'female', '1995-01-25', 750.00, CURRENT_TIMESTAMP - INTERVAL '7 days'),
+('劉志強', 'liu@example.com', '0989012345', 'male', '1991-09-12', 1200.00, CURRENT_TIMESTAMP - INTERVAL '20 days'),
+
+-- 高消費但較久未消費客戶 (35-60天前)
+('趙雅雯', 'zhao@example.com', '0990123456', 'female', '1986-04-18', 18900.00, CURRENT_TIMESTAMP - INTERVAL '45 days'),
+('錢志豪', 'qian@example.com', '0901234567', 'male', '1983-12-05', 22100.00, CURRENT_TIMESTAMP - INTERVAL '52 days'),
+
+-- 中等消費但較久未消費客戶 (35-90天前)
+('孫美惠', 'sun@example.com', '0912345679', 'female', '1989-06-30', 3800.00, CURRENT_TIMESTAMP - INTERVAL '68 days'),
+('周建成', 'zhou@example.com', '0923456780', 'male', '1994-02-14', 2650.00, CURRENT_TIMESTAMP - INTERVAL '75 days'),
+
+-- 新客戶 (消費金額較低，但最近有消費)
+('吳新客', 'wu_new@example.com', '0934567891', 'female', '1996-08-07', 300.00, CURRENT_TIMESTAMP - INTERVAL '3 days'),
+('李新手', 'li_new@example.com', '0945678902', 'male', '1997-10-22', 850.00, CURRENT_TIMESTAMP - INTERVAL '9 days'),
+
+-- 流失風險客戶 (很久沒消費，超過90天)
+('古老客', 'gu@example.com', '0956789013', 'male', '1980-01-15', 5200.00, CURRENT_TIMESTAMP - INTERVAL '120 days'),
+('舊客戶', 'old@example.com', '0967890124', 'female', '1982-05-28', 8900.00, CURRENT_TIMESTAMP - INTERVAL '150 days');
+
+-- 取得插入的客戶 UUID (用於後續關聯資料)
+-- 注意：以下語句需要根據實際產生的 UUID 進行調整，這裡用變數示例
+
+-- 插入訂單資料 (模擬不同時間點的消費記錄)
+-- 為了簡化，我們先用子查詢方式插入幾筆訂單
+
+INSERT INTO "order" (customer_id, status, total_amount, created_at) 
+SELECT c.uuid, 'delivered', 5999.00, CURRENT_TIMESTAMP - INTERVAL '5 days'
+FROM customer c WHERE c.email = 'zhang@example.com'
+UNION ALL
+SELECT c.uuid, 'delivered', 2999.00, CURRENT_TIMESTAMP - INTERVAL '12 days'
+FROM customer c WHERE c.email = 'li@example.com'
+UNION ALL
+SELECT c.uuid, 'delivered', 1200.00, CURRENT_TIMESTAMP - INTERVAL '8 days'
+FROM customer c WHERE c.email = 'chen@example.com'
+UNION ALL
+SELECT c.uuid, 'delivered', 850.00, CURRENT_TIMESTAMP - INTERVAL '9 days'
+FROM customer c WHERE c.email = 'li_new@example.com';
+
+-- 插入客戶標籤關聯 (用於測試標籤篩選功能)
+INSERT INTO customer_tag (customer_id, tag_id)
+SELECT c.uuid, t.uuid 
+FROM customer c, tag t 
+WHERE c.email = 'zhang@example.com' AND t.name = 'VIP'
+UNION ALL
+SELECT c.uuid, t.uuid 
+FROM customer c, tag t 
+WHERE c.email = 'li@example.com' AND t.name = 'VIP'
+UNION ALL
+SELECT c.uuid, t.uuid 
+FROM customer c, tag t 
+WHERE c.email = 'wang@example.com' AND t.name = 'VIP'
+UNION ALL
+SELECT c.uuid, t.uuid 
+FROM customer c, tag t 
+WHERE c.email = 'zhao@example.com' AND t.name = 'VIP'
+UNION ALL
+SELECT c.uuid, t.uuid 
+FROM customer c, tag t 
+WHERE c.email = 'qian@example.com' AND t.name = 'VIP'
+UNION ALL
+SELECT c.uuid, t.uuid 
+FROM customer c, tag t 
+WHERE c.email = 'wu_new@example.com' AND t.name = '新客戶'
+UNION ALL
+SELECT c.uuid, t.uuid 
+FROM customer c, tag t 
+WHERE c.email = 'li_new@example.com' AND t.name = '新客戶'
+UNION ALL
+SELECT c.uuid, t.uuid 
+FROM customer c, tag t 
+WHERE c.email = 'chen@example.com' AND t.name = '活躍用戶'
+UNION ALL
+SELECT c.uuid, t.uuid 
+FROM customer c, tag t 
+WHERE c.email = 'lin@example.com' AND t.name = '活躍用戶'
+UNION ALL
+SELECT c.uuid, t.uuid 
+FROM customer c, tag t 
+WHERE c.email = 'gu@example.com' AND t.name = '流失風險'
+UNION ALL
+SELECT c.uuid, t.uuid 
+FROM customer c, tag t 
+WHERE c.email = 'old@example.com' AND t.name = '流失風險'
+UNION ALL
+SELECT c.uuid, t.uuid 
+FROM customer c, tag t 
+WHERE c.email = 'zhang@example.com' AND t.name = '高消費'
+UNION ALL
+SELECT c.uuid, t.uuid 
+FROM customer c, tag t 
+WHERE c.email = 'wang@example.com' AND t.name = '高消費'
+UNION ALL
+SELECT c.uuid, t.uuid 
+FROM customer c, tag t 
+WHERE c.email = 'zhao@example.com' AND t.name = '高消費';
+
+-- 插入優惠券資料
 INSERT INTO coupon (name, type, description, threshold_amount, amount, discount, total_count, remaining_count, start_date, end_date) VALUES 
 ('新客戶歡迎券', 'fixed_amount', '新客戶專屬優惠', 1000.00, 200.00, NULL, 100, 100, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + INTERVAL '30 days'),
 ('滿千折百', 'fixed_amount', '滿1000元折100元', 1000.00, 100.00, NULL, 500, 500, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + INTERVAL '60 days'),
