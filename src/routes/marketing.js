@@ -3,6 +3,7 @@ const router = express.Router();
 const marketingController = require("../controllers/marketingController");
 const {
   validateMarketingSegments,
+  validateSMSRequest,
 } = require("../middleware/validation");
 
 /**
@@ -21,5 +22,28 @@ router.get(
   validateMarketingSegments,
   marketingController.getCustomerSegments
 );
+
+/**
+ * @route POST /api/marketing/sms/send
+ * @desc 發送行銷簡訊
+ * @body {Object} 簡訊發送資料
+ * @example
+ * POST /api/marketing/sms/send
+ * {
+ *   "template": "親愛的 {name}，您的累積消費已達 {totalSpent}，感謝您的支持！",
+ *   "customerUuids": ["uuid1", "uuid2", "uuid3"]
+ * }
+ * 
+ * 或者使用動態篩選：
+ * {
+ *   "template": "親愛的 {name}，您的累積消費已達 {totalSpent}，感謝您的支持！",
+ *   "criteria": {
+ *     "minAmount": 500,
+ *     "days": 30,
+ *     "tags": ["VIP"]
+ *   }
+ * }
+ */
+router.post("/sms/send", validateSMSRequest, marketingController.sendMarketingSMS);
 
 module.exports = router;

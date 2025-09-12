@@ -397,6 +397,31 @@ class CustomerService {
       throw error;
     }
   }
+
+  /**
+   * 根據UUID獲取客戶詳細資訊
+   * @param {Array} customerUuids - 客戶UUID陣列
+   * @returns {Array} 客戶詳細資訊
+   */
+  async getCustomersByUuids(customerUuids) {
+    if (!customerUuids || customerUuids.length === 0) {
+      return [];
+    }
+
+    const query = `
+      SELECT uuid, name, email, phone, total_spent, last_order_date
+      FROM customer 
+      WHERE uuid = ANY($1)
+    `;
+
+    try {
+      const result = await pool.query(query, [customerUuids]);
+      return result.rows;
+    } catch (error) {
+      console.error("Error getting customers by UUIDs:", error);
+      throw error;
+    }
+  }
 }
 
 module.exports = new CustomerService();

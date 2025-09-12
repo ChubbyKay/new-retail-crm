@@ -145,6 +145,68 @@ const validateMarketingSegments = [
   handleValidationErrors
 ];
 
+// 簡訊發送請求驗證
+const validateSMSRequest = [
+  body('template')
+    .notEmpty()
+    .withMessage('簡訊範本不能為空')
+    .isLength({ max: 160 })
+    .withMessage('簡訊內容不能超過 160 字元'),
+  body('customerUuids')
+    .optional()
+    .isArray()
+    .withMessage('客戶UUID列表必須為陣列格式')
+    .custom((value) => {
+      if (value && value.length === 0) {
+        throw new Error('客戶UUID列表不能為空');
+      }
+      if (value) {
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        for (const uuid of value) {
+          if (!uuidRegex.test(uuid)) {
+            throw new Error(`無效的客戶UUID格式: ${uuid}`);
+          }
+        }
+      }
+      return true;
+    }),
+  body('criteria')
+    .optional()
+    .isObject()
+    .withMessage('篩選條件必須為物件格式'),
+  body('criteria.minAmount')
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage('篩選條件中的最小消費金額必須為非負數字'),
+  body('criteria.days')
+    .optional()
+    .isInt({ min: 1, max: 365 })
+    .withMessage('篩選條件中的天數必須為 1-365 之間的整數'),
+  body('criteria.tags')
+    .optional()
+    .isArray()
+    .withMessage('篩選條件中的標籤必須為陣列格式')
+    .custom((value) => {
+      if (value) {
+        for (const tag of value) {
+          if (typeof tag !== 'string' || tag.trim().length === 0) {
+            throw new Error('篩選條件中的標籤必須為非空字串');
+          }
+        }
+      }
+      return true;
+    }),
+  // 自訂驗證：必須提供 customerUuids 或 criteria 其中之一
+  body()
+    .custom((value) => {
+      if (!value.customerUuids && !value.criteria) {
+        throw new Error('請提供客戶UUID列表或篩選條件');
+      }
+      return true;
+    }),
+  handleValidationErrors
+];
+
 module.exports = {
   validateCreateCoupon,
   validateUUID,
@@ -152,4 +214,5 @@ module.exports = {
   validateUseCoupon,
   validateCustomerId,
   validateMarketingSegments,
+  validateSMSRequest,
 };
