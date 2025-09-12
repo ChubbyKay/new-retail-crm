@@ -333,6 +333,70 @@ class CustomerService {
       throw error;
     }
   }
+
+  /**
+   * 根據條件篩選客戶 (客戶分群)
+   * @param {Object} criteria - 篩選條件
+   * @param {number} criteria.minAmount - 最小消費金額
+   * @param {number} criteria.days - 近幾天內的消費
+   * @param {Array} criteria.tags - 客戶標籤 (可選)
+   * @returns {Array} 符合條件的客戶列表
+   */
+  async getCustomerSegments(criteria) {
+    const { minAmount = 0, days = 30, tags = [] } = criteria;
+
+    // 計算日期範圍
+    const dateThreshold = new Date();
+    dateThreshold.setDate(dateThreshold.getDate() - days);
+
+    let query = `
+      SELECT DISTINCT c.uuid, c.name, c.email, c.phone, c.total_spent, c.last_order_date
+      FROM customer c
+    `;
+
+    const conditions = [];
+    const values = [];
+    let paramIndex = 1;
+
+    // 條件1: 總消費金額大於等於指定金額
+    if (minAmount > 0) {
+      conditions.push(`c.total_spent >= $${paramIndex}`);
+      values.push(minAmount);
+      paramIndex++;
+    }
+
+    // 條件2: 最後消費時間在指定天數內
+    conditions.push(`c.last_order_date >= $${paramIndex}`);
+    values.push(dateThreshold);
+    paramIndex++;
+
+    // 條件3: 如果有指定標籤，加入標籤篩選
+    if (tags.length > 0) {
+      query += `
+        INNER JOIN customer_tag ct ON c.uuid = ct.customer_id
+        INNER JOIN tag t ON ct.tag_id = t.uuid
+      `;
+      conditions.push(`t.name = ANY($${paramIndex})`);
+      values.push(tags);
+      paramIndex++;
+    }
+
+    // 組合 WHERE 條件
+    if (conditions.length > 0) {
+      query += ` WHERE ${conditions.join(" AND ")}`;
+    }
+
+    // 排序: 按總消費金額降序
+    query += ` ORDER BY c.total_spent DESC`;
+
+    try {
+      const result = await pool.query(query, values);
+      return result.rows;
+    } catch (error) {
+      console.error("Error getting customer segments:", error);
+      throw error;
+    }
+  }
 }
 
 module.exports = new CustomerService();

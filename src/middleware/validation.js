@@ -1,4 +1,4 @@
-const { body, param, validationResult } = require("express-validator");
+const { body, param, query, validationResult } = require("express-validator");
 
 // 驗證結果處理中介軟體
 const handleValidationErrors = (req, res, next) => {
@@ -113,10 +113,43 @@ const validateCustomerId = [
   handleValidationErrors
 ];
 
+// 客戶分群查詢參數驗證
+const validateMarketingSegments = [
+  query('minAmount')
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage('最小消費金額必須為非負數字'),
+  query('days')
+    .optional()
+    .isInt({ min: 1, max: 365 })
+    .withMessage('天數必須為 1-365 之間的整數'),
+  query('tags')
+    .optional()
+    .custom((value) => {
+      // tags 可以是字串或字串陣列
+      if (Array.isArray(value)) {
+        for (const tag of value) {
+          if (typeof tag !== 'string' || tag.trim().length === 0) {
+            throw new Error('標籤必須為非空字串');
+          }
+        }
+      } else if (typeof value === 'string') {
+        if (value.trim().length === 0) {
+          throw new Error('標籤不能為空字串');
+        }
+      } else {
+        throw new Error('標籤格式不正確');
+      }
+      return true;
+    }),
+  handleValidationErrors
+];
+
 module.exports = {
   validateCreateCoupon,
   validateUUID,
   validateCustomerCouponParams,
   validateUseCoupon,
   validateCustomerId,
+  validateMarketingSegments,
 };

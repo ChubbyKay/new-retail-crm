@@ -38,10 +38,12 @@ app.get("/health", async (req, res) => {
 // 引入路由模組
 const couponRoutes = require("./routes/coupons");
 const customerRoutes = require("./routes/customers");
+const marketingRoutes = require("./routes/marketing");
 
 // 使用路由
 app.use("/api/coupons", couponRoutes);
 app.use("/api/customers", customerRoutes);
+app.use("/api/marketing", marketingRoutes);
 
 // 404 處理
 app.use((req, res) => {
