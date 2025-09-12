@@ -8,8 +8,8 @@
 - [技術棧](#技術棧)
 - [專案結構](#專案結構)
 - [安裝與設定](#安裝與設定)
-- [API 文件](#api-文件)
 - [資料庫設計](#資料庫設計)
+- [API 文件](#api-文件)
 - [測試說明](#測試說明)
 - [開發說明](#開發說明)
 
@@ -37,29 +37,36 @@
 ## 📁 專案結構
 
 ```
-scripts/
-    ├── setup-db.js            # 執行初始化資料庫腳本
-src/
-    ├── controllers/           # API 控制層
-    │   ├── customerController.js    # 客戶相關控制器
-    │   ├── couponController.js      # 優惠券控制器
-    │   └── marketingController.js   # 行銷功能控制器
-    ├── routes/               # 路由定義
-    │   ├── customers.js             # 客戶路由
-    │   ├── coupons.js              # 優惠券路由
-    │   └── marketing.js            # 行銷路由
-    ├── services/             # 業務邏輯層
-    │   ├── couponService.js        # 優惠券業務邏輯
-    │   ├── customerService.js      # 客戶業務邏輯
-    │   └── smsService.js           # 簡訊服務
-    ├── config/               # 配置檔案
-    │   ├── database.js             # 資料庫連線設定
-    │   └── init-db.sql             # 資料庫初始化 + 測試資料
-    └── middleware/          # 中介軟體
-    │   ├── errorHandler.js         # 錯誤處理中介軟體
-    │   └── validation.js          # 資料驗證中介軟體
-    └── app.js
-    └── server.js
+new-retail-crm/
+├── scripts/
+│   └── setup-db.js                 # 資料庫初始化腳本
+├── src/
+│   ├── controllers/                # API 控制層
+│   │   ├── customerController.js   # 客戶相關控制器
+│   │   ├── couponController.js     # 優惠券控制器
+│   │   └── marketingController.js  # 行銷功能控制器
+│   ├── routes/                     # 路由定義
+│   │   ├── customers.js            # 客戶路由
+│   │   ├── coupons.js              # 優惠券路由
+│   │   └── marketing.js            # 行銷路由
+│   ├── services/                   # 業務邏輯層
+│   │   ├── couponService.js        # 優惠券業務邏輯
+│   │   ├── customerService.js      # 客戶業務邏輯
+│   │   └── smsService.js           # 簡訊服務
+│   ├── config/                     # 配置檔案
+│   │   ├── database.js             # 資料庫連線設定
+│   │   └── init-db.sql             # 資料庫初始化 + 測試資料
+│   ├── middleware/                 # 中介軟體
+│   │   ├── errorHandler.js         # 錯誤處理中介軟體
+│   │   └── validation.js           # 資料驗證中介軟體
+│   ├── app.js                      # Express 應用程式設定
+│   └── server.js                   # 伺服器啟動入口
+├── docs/                           # 文件資料夾
+│   └── erd.png                     # 資料庫 ERD 圖
+├── .env                            # 環境變數檔案
+├── .gitignore                      # Git 忽略清單
+├── package.json                    # 專案配置與依賴
+└── README.md                       # 專案說明文件
 ```
 
 ## ⚙️ 安裝與設定
@@ -137,6 +144,16 @@ npm run start
 Server is running on port 3000
 Environment: development
 ```
+
+## 🗄️ 資料庫設計
+![ERD 圖](docs/erd.png)
+
+### ER 圖關係
+- Customer ↔ Customer_Tag ↔ Tag (多對多關係)
+- Customer → Order (一對多關係)
+- Order → Order_Item ↔ Product (多對多關係)
+- Customer ↔ Customer_Coupon ↔ Coupon (多對多關係)
+
 
 ## 📚 API 文件
 
@@ -487,14 +504,6 @@ GET /api/customers/75badad8-1cfb-487d-96b4-6620274e91ae/coupons?status=unused&co
 }
 ```
 
-## 🗄️ 資料庫設計
-
-### ER 圖關係
-- Customer ↔ Customer_Tag ↔ Tag (多對多關係)
-- Customer → Order (一對多關係)
-- Order → Order_Item ↔ Product (多對多關係)
-- Customer ↔ Customer_Coupon ↔ Coupon (多對多關係)
-
 ## 🧪 測試說明
 
 ### 測試資料情境
@@ -629,10 +638,16 @@ curl -X POST "http://localhost:3000/api/customers/{CUSTOMER_UUID}/coupons/{CUSTO
 ### 架構設計原則
 
 1. **分層架構**：Controller → Service → Database
+    - Controller：處理 HTTP 請求與回應
+    - Service：執行業務邏輯
+    - Database：資料存取操作
 2. **單一責任**：每個模組專注於特定功能
-3. **依賴注入**：Service 層獨立於 Controller
-4. **錯誤處理**：統一的錯誤處理機制
-5. **資料驗證**：middleware 層統一驗證
+    - Controller 只處理請求驗證與回應格式
+    - Service 包含所有業務邏輯
+    - Middleware 負責通用功能（驗證、錯誤處理）
+3. **依賴注入**：Service 層獨立於 Controller，便於測試與維護
+4. **錯誤處理**：所有錯誤透過 errorHandler middleware 統一處理
+5. **資料驗證**：使用 express-validator 在 middleware 層統一驗證
 
 ### 併發控制
 
