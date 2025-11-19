@@ -34,6 +34,41 @@
 - **UUID**：uuid v4
 - **其他**：dotenv (環境變數管理)
 
+## 💻 開發說明
+
+### 架構設計原則
+
+1. **分層架構**：Controller → Service → Database
+    - Controller：處理 HTTP 請求與回應
+    - Service：執行業務邏輯
+    - Database：資料存取操作
+2. **單一責任**：每個模組專注於特定功能
+    - Controller 只處理請求驗證與回應格式
+    - Service 包含所有業務邏輯
+    - Middleware 負責通用功能（驗證、錯誤處理）
+3. **依賴注入**：Service 層獨立於 Controller，便於測試與維護
+4. **錯誤處理**：所有錯誤透過 errorHandler middleware 統一處理
+5. **資料驗證**：使用 express-validator 在 middleware 層統一驗證
+
+### 併發控制
+
+優惠券領取使用悲觀鎖來防止超發：
+```sql
+-- 使用 FOR UPDATE 鎖定記錄
+SELECT * FROM coupon WHERE uuid = $1 FOR UPDATE;
+```
+
+### 動態變數系統
+
+簡訊範本支援以下動態變數：
+- `{name}`: 客戶姓名
+- `{totalSpent}`: 總消費金額
+- `{lastOrderDate}`: 最後消費日期
+
+---
+
+**注意**：此專案為面試作品展示，專注於核心功能實現與程式碼品質。
+
 ## 📁 專案結構
 
 ```
@@ -632,38 +667,3 @@ curl -X POST "http://localhost:3000/api/customers/{CUSTOMER_UUID}/coupons/{CUSTO
    - 從步驟 4 的回應中複製優惠券 UUID，用於步驟 7
    - 從步驟 1 的回應中複製客戶 UUID，用於步驟 8-10
    - 從步驟 8 的回應中複製 customerCouponId，用於步驟 10
-
-## 💻 開發說明
-
-### 架構設計原則
-
-1. **分層架構**：Controller → Service → Database
-    - Controller：處理 HTTP 請求與回應
-    - Service：執行業務邏輯
-    - Database：資料存取操作
-2. **單一責任**：每個模組專注於特定功能
-    - Controller 只處理請求驗證與回應格式
-    - Service 包含所有業務邏輯
-    - Middleware 負責通用功能（驗證、錯誤處理）
-3. **依賴注入**：Service 層獨立於 Controller，便於測試與維護
-4. **錯誤處理**：所有錯誤透過 errorHandler middleware 統一處理
-5. **資料驗證**：使用 express-validator 在 middleware 層統一驗證
-
-### 併發控制
-
-優惠券領取使用悲觀鎖來防止超發：
-```sql
--- 使用 FOR UPDATE 鎖定記錄
-SELECT * FROM coupon WHERE uuid = $1 FOR UPDATE;
-```
-
-### 動態變數系統
-
-簡訊範本支援以下動態變數：
-- `{name}`: 客戶姓名
-- `{totalSpent}`: 總消費金額
-- `{lastOrderDate}`: 最後消費日期
-
----
-
-**注意**：此專案為面試作品展示，專注於核心功能實現與程式碼品質。
